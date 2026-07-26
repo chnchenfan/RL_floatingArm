@@ -30,6 +30,14 @@ BC_WEIGHT = float(os.environ.get("PHASE1_BC_WEIGHT", "0.2"))
 CARTESIAN_WEIGHT = float(os.environ.get("PHASE1_CARTESIAN_WEIGHT", "0.02"))
 DART_FRACTION = float(os.environ.get("PHASE1_DART_FRACTION", "0.3"))
 CONDITION_WEIGHTS_TEXT = os.environ.get("PHASE1_CONDITION_WEIGHTS", "")
+# training-time robustification: Gaussian noise injected into the normalized
+# observation condition (z-space std); widens the closed-loop recovery basin
+OBS_NOISE = float(os.environ.get("PHASE1_OBS_NOISE", "0.0"))
+# balance batches over first-action magnitude bins (slow/medium/fast) so fast
+# transfers and large recovery actions are not drowned out by slow drawing
+SPEED_BALANCE = os.environ.get("PHASE1_SPEED_BALANCE", "0") == "1"
+SPEED_FRACTIONS = (0.4, 0.3, 0.3)
+SPEED_EDGES = (0.25, 0.5)
 
 
 def update_ema(ema, model, decay=0.999):
@@ -61,8 +69,10 @@ def main():
     obs_horizon = int(data["obs_horizon"])
     action_horizon = int(data["action_horizon"])
 
-    def condition(obs):
+    def condition(obs, noise=0.0):
         normalized = ((obs - obs_mean) / obs_std).clamp(-10.0, 10.0)
+        if noise > 0.0:
+            normalized = normalized + noise * torch.randn_like(normalized)
         return normalized.flatten(1)
 
     condition_count = int(train_condition_id.max().item()) + 1
@@ -80,14 +90,24 @@ def main():
     else:
         condition_weights = np.ones(condition_count, dtype=np.float64)
     condition_weights /= condition_weights.sum()
+    if SPEED_BALANCE:
+        magnitude = train_action[:, 0].abs().mean(dim=-1)
+        speed_bin = torch.bucketize(
+            magnitude,
+            torch.tensor(SPEED_EDGES, device=device))
     groups = {}
     for condition_id in range(condition_count):
         for is_dart in (False, True):
-            groups[(condition_id, is_dart)] = torch.nonzero(
-                (train_condition_id == condition_id)
-                & (train_is_dart == is_dart),
-                as_tuple=False,
-            )[:, 0]
+            base_mask = ((train_condition_id == condition_id)
+                         & (train_is_dart == is_dart))
+            if SPEED_BALANCE:
+                for sbin in range(3):
+                    groups[(condition_id, is_dart, sbin)] = torch.nonzero(
+                        base_mask & (speed_bin == sbin),
+                        as_tuple=False)[:, 0]
+            else:
+                groups[(condition_id, is_dart)] = torch.nonzero(
+                    base_mask, as_tuple=False)[:, 0]
 
     def sample_balanced_indices():
         dart_n = int(round(BATCH * DART_FRACTION))
@@ -101,6 +121,16 @@ def main():
                 counts[condition_id] += 1
             for condition_id in range(condition_count):
                 count = int(counts[condition_id])
+                if SPEED_BALANCE:
+                    for sbin, frac in enumerate(SPEED_FRACTIONS):
+                        candidates = groups[(condition_id, is_dart, sbin)]
+                        n_bin = max(int(round(count * frac)), 1)
+                        if len(candidates) == 0:
+                            continue
+                        pick = torch.randint(
+                            0, len(candidates), (n_bin,), device=device)
+                        pieces.append(candidates[pick])
+                    continue
                 candidates = groups[(condition_id, is_dart)]
                 if len(candidates) == 0:
                     raise ValueError(
@@ -147,7 +177,7 @@ def main():
         f"[phase1] train={len(train_obs)} val={len(val_obs)} batch={BATCH} "
         f"steps={STEPS} params={sum(p.numel() for p in model.parameters()):,} "
         f"bc_w={BC_WEIGHT} cart_w={CARTESIAN_WEIGHT} "
-        f"dart_fraction={DART_FRACTION} "
+        f"dart_fraction={DART_FRACTION} obs_noise={OBS_NOISE} "
         f"condition_weights={condition_weights.tolist()}",
         flush=True,
     )
@@ -159,7 +189,7 @@ def main():
         with torch.autocast("cuda", dtype=torch.bfloat16):
             losses = model.loss(
                 train_action[idx],
-                condition(train_obs[idx]),
+                condition(train_obs[idx], noise=OBS_NOISE),
                 first_position_jacobian=train_jacobian[idx],
                 action_scale=float(data["action_scale"]),
                 bc_weight=BC_WEIGHT,

@@ -1,0 +1,46 @@
+{
+  "task": "whole_v2",
+  "schema_version": "whole_v2_oneshot_73.0394904589",
+  "checkpoint": "/home/windylab/code/isaac_arm_rl/logs/phase1_whole_diffusion/policy_whole_r3.pt",
+  "dataset": "/home/windylab/code/isaac_arm_rl/data/phase1_whole_v2_dataset_r2.npz",
+  "state_bank": "/home/windylab/code/isaac_arm_rl/data/whole_v2_state_bank.npz",
+  "observation_version": 2,
+  "observation_dim": 47,
+  "obs_horizon": 2,
+  "action_horizon": 8,
+  "action_scale": 0.04,
+  "training": {
+    "steps": 6000,
+    "batch": 1024,
+    "seed": 42,
+    "dart_fraction": 0.5,
+    "speed_balance": true,
+    "obs_noise": 0.0,
+    "offline_deploy_cart_mm": 0.369
+  },
+  "deployment": {
+    "ddim_steps": 8,
+    "deterministic": true,
+    "exec_horizon": 1,
+    "condition_gain": 1.0
+  },
+  "plant_model": {
+    "command_delay_ticks": 0,
+    "plant_stiffness": 80000.0,
+    "plant_damping": 4000.0,
+    "per_tick_target": "computed once per control tick, within-tick linear ramp + velocity feedforward",
+    "calibration": "vs loop CSV 20260726_023830: q mean err 0.0042 rad, dq mean err 0.082 rad/s",
+    "warning": "command_delay_ticks=1 makes the BC loop oscillate and diverge 100%; keep 0"
+  },
+  "closed_loop_smoke": {
+    "date": "2026-07-26",
+    "envs": 256,
+    "steps": 800,
+    "random_phases": true,
+    "exact_condition": true,
+    "mean_mm": 1.80,
+    "p95_mm": 3.24,
+    "diverged_pct": 0.0
+  },
+  "status": "closed-loop stable on 800-tick windows; FULL-CYCLE (3700-tick) validation still pending"
+}

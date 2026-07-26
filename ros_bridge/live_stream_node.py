@@ -40,6 +40,11 @@ class LiveStreamNode(Node):
 
         self.joint_publisher = self.create_publisher(
             JointState, "/joint_states", 10)
+        # Final RL joint command, republished with the MPC visualizer contract
+        # (frame_id 'moving_base_track', names joint1..7, real publish stamp)
+        # so trajectory_visualizer_demo.py can be reused unchanged.
+        self.command_publisher = self.create_publisher(
+            JointState, "/student/joint_command", 10)
         self.actual_publisher = self.create_publisher(
             Marker, "/rollout_ee_actual", 4)
         self.target_publisher = self.create_publisher(
@@ -49,6 +54,7 @@ class LiveStreamNode(Node):
 
         self.actual_trail = []
         self.target_trail = []
+        self.last_stroke = None
         self.last_cycle = None
         self.last_seq = -1
         self.first_packet = True
@@ -88,7 +94,8 @@ class LiveStreamNode(Node):
             self.last_packet_at = now
 
     def _publish(self, packet):
-        if int(packet["version"]) != 1:
+        version = int(packet["version"])
+        if version not in (1, 2):
             raise ValueError(f"unsupported packet version {packet['version']}")
         sequence = int(packet["seq"])
         if sequence == 0 and self.last_seq > 0:
@@ -104,14 +111,29 @@ class LiveStreamNode(Node):
         ee = _finite_vector(packet, "ee", 3)
         target = _finite_vector(packet, "target", 3)
         cycle = int(packet["cycle"])
+        pen_down = bool(packet.get("pen_down", True))
+        stroke_id = int(packet.get("stroke_id", 0))
         now = self.get_clock().now().to_msg()
 
         if cycle != self.last_cycle:
             self.actual_trail.clear()
             self.target_trail.clear()
             self.last_cycle = cycle
-        self.actual_trail.append(ee)
-        self.target_trail.append(target)
+        # break line strips on pen-up and on stroke changes so letters and
+        # stations are never visually connected
+        if not pen_down:
+            marker_break = None
+            if not self.actual_trail or self.actual_trail[-1] is not None:
+                self.actual_trail.append(marker_break)
+                self.target_trail.append(marker_break)
+            self.last_stroke = None
+        else:
+            if self.last_stroke is not None and stroke_id != self.last_stroke:
+                self.actual_trail.append(None)
+                self.target_trail.append(None)
+            self.actual_trail.append(ee)
+            self.target_trail.append(target)
+            self.last_stroke = stroke_id
         if len(self.actual_trail) > self.max_trail_points:
             self.actual_trail.pop(0)
             self.target_trail.pop(0)
@@ -122,6 +144,18 @@ class LiveStreamNode(Node):
         joint_state.position = q
         joint_state.velocity = dq
         self.joint_publisher.publish(joint_state)
+
+        if "q_cmd" in packet:
+            q_cmd = _finite_vector(packet, "q_cmd", 7)
+            dq_cmd = (_finite_vector(packet, "dq_cmd", 7)
+                      if "dq_cmd" in packet else [0.0] * 7)
+            command = JointState()
+            command.header.stamp = now
+            command.header.frame_id = "moving_base_track"
+            command.name = self.joint_names
+            command.position = q_cmd
+            command.velocity = dq_cmd
+            self.command_publisher.publish(command)
 
         transform = TransformStamped()
         transform.header.stamp = now
@@ -160,23 +194,30 @@ class LiveStreamNode(Node):
         self.last_packet_at = time.monotonic()
 
     def _publish_trail(self, publisher, points, rgb, marker_id, stamp):
+        # LINE_LIST of per-segment point pairs; None entries are pen-up or
+        # stroke-change separators and never produce a connecting line.
         marker = Marker()
         marker.header.frame_id = self.world_frame
         marker.header.stamp = stamp
         marker.ns = "rollout"
         marker.id = marker_id
-        marker.type = (
-            Marker.LINE_STRIP if len(points) > 1 else Marker.POINTS)
+        marker.type = Marker.LINE_LIST
         marker.action = Marker.ADD
         marker.scale.x = 0.005
-        marker.scale.y = 0.005
         marker.color.r, marker.color.g, marker.color.b = rgb
         marker.color.a = 1.0
         marker.pose.orientation.w = 1.0
-        marker.points = [
-            Point(x=point[0], y=point[1], z=point[2])
-            for point in points
-        ]
+        previous = None
+        for point in points:
+            if point is None:
+                previous = None
+                continue
+            if previous is not None:
+                marker.points.append(
+                    Point(x=previous[0], y=previous[1], z=previous[2]))
+                marker.points.append(
+                    Point(x=point[0], y=point[1], z=point[2]))
+            previous = point
         publisher.publish(marker)
 
     def destroy_node(self):

@@ -38,6 +38,13 @@ logs/phase2_residual/eval/**
 !logs/phase2_residual/eval/20260725_031443_random_handoff_inertia_envs4096/
 logs/phase2_residual/eval/20260725_031443_random_handoff_inertia_envs4096/**
 !logs/phase2_residual/eval/20260725_031443_random_handoff_inertia_envs4096/summary.json
+# whole_v2: selected Phase-1 checkpoint (r3) + training logs; r1/r2 stay local
+!logs/phase1_whole_diffusion/
+logs/phase1_whole_diffusion/**
+!logs/phase1_whole_diffusion/policy_whole_r3.pt
+!logs/phase1_whole_diffusion/train.log
+!logs/phase1_whole_diffusion/train_r2.log
+!logs/phase1_whole_diffusion/train_r3.log
 
 # Duplicated handoff bundles and archives; deployment exports remain tracked.
 exports/chatgpt_handoff_*/

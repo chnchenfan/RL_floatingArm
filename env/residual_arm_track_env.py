@@ -17,6 +17,7 @@ import math
 import os
 import sys
 
+import numpy as np
 import torch
 
 from isaaclab.utils import configclass
@@ -73,6 +74,37 @@ class ResidualArmTrackEnvCfg(ArmTrackEnvCfg):
     w_saturation: float = 0.10
 
 
+@configclass
+class WholeResidualArmTrackEnvCfg(ResidualArmTrackEnvCfg):
+    """Residual RL on the frozen exact whole task (whole_v2 schema).
+
+    Training uses random-phase truncated windows over the 73.039-s cycle;
+    resets are seeded from the per-phase state bank built out of clean MPC
+    whole rollouts.  Final validation must still run one full continuous
+    cycle (see scripts/eval_phase2_whole.py)."""
+
+    single_circle = False
+    whole_task = True
+    start_phase_random = True
+    episode_length_s = 12.0
+    # whole-config MPC step contract (0.04 rad/tick at 50 Hz)
+    max_joint_step = 0.04
+    # plant model calibrated against the 2026-07-26 whole loop CSVs:
+    # velocity-feedforward ramp tracking with 80000/4000 PD.
+    # command_delay_ticks MUST stay 0: with delay=1 the BC loop (2-tick
+    # action->obs latency) oscillates and 100% diverges; with delay=0 the
+    # r3 policy holds 1.80mm mean / 0% divergence over 800-tick windows
+    # (measured 2026-07-26, 256 envs, random phases).
+    command_delay_ticks = 0
+    plant_stiffness = 80000.0
+    plant_damping = 4000.0
+
+    phase1_checkpoint: str = (
+        f"{ROOT}/logs/phase1_whole_diffusion/policy_whole.pt")
+    phase1_condition_gain: float = 1.0
+    state_bank_path: str = f"{ROOT}/data/whole_v2_state_bank.npz"
+
+
 class ResidualArmTrackEnv(ArmTrackEnv):
     cfg: ResidualArmTrackEnvCfg
 
@@ -118,15 +150,25 @@ class ResidualArmTrackEnv(ArmTrackEnv):
             self.num_envs, dtype=torch.bool, device=self.device)
         self._condition_id = torch.zeros(
             self.num_envs, dtype=torch.long, device=self.device)
-        self._phase1_gain = torch.tensor(
-            [0.87, 0.90, 0.93], device=self.device)
+        if cfg.whole_task:
+            gain = float(getattr(cfg, "phase1_condition_gain", 1.0))
+            self._phase1_gain = torch.full((3,), gain, device=self.device)
+        else:
+            self._phase1_gain = torch.tensor(
+                [0.87, 0.90, 0.93], device=self.device)
         self._base_action = torch.zeros(
             self.num_envs, 7, device=self.device)
         self._residual_action = torch.zeros_like(self._base_action)
         self._previous_residual_action = torch.zeros_like(self._base_action)
         self._residual_delta = torch.zeros_like(self._base_action)
         self._final_action = torch.zeros_like(self._base_action)
-        self._seed_q, self._seed_dq = _load_seed_states(self.device)
+        if cfg.whole_task:
+            self._state_bank = _load_state_bank(
+                cfg.state_bank_path, self.device)
+            self._seed_q = self._seed_dq = None
+        else:
+            self._state_bank = None
+            self._seed_q, self._seed_dq = _load_seed_states(self.device)
 
         all_envs = torch.arange(
             self.num_envs, device=self.device, dtype=torch.long)
@@ -134,8 +176,19 @@ class ResidualArmTrackEnv(ArmTrackEnv):
         self._history_needs_reset[:] = True
 
     def _set_phase2_condition(self, env_ids: torch.Tensor):
-        """Sample an even easy/medium/hard mixture with small local jitter."""
+        """Sample the episode's base-motion condition.
+
+        whole task: one config-matched condition with small jitter, random
+        start phase kept from the base-class reset.  circle task: legacy even
+        easy/medium/hard mixture with phase forced to 0."""
         count = len(env_ids)
+        if self.cfg.whole_task:
+            self._condition_id[env_ids] = 0
+            d = self.targets.sample_whole_disturbance(
+                count, jitter=self.cfg.condition_jitter_fraction)
+            for key, value in d.items():
+                self._dist[key][env_ids] = value
+            return
         condition_id = torch.randint(
             0, 3, (count,), device=self.device)
         self._condition_id[env_ids] = condition_id
@@ -174,12 +227,21 @@ class ResidualArmTrackEnv(ArmTrackEnv):
             return
 
         self._set_phase2_condition(env_ids)
-        condition_id = self._condition_id[env_ids]
-        q = self._seed_q[condition_id].clone()
-        q += self.cfg.initial_joint_noise_std * torch.randn_like(q)
-        dq = self._seed_dq[condition_id].clone()
+        if self.cfg.whole_task:
+            q, dq, prev_action = _draw_bank_states(
+                self._state_bank, self._start[env_ids])
+            q = q + self.cfg.initial_joint_noise_std * torch.randn_like(q)
+        else:
+            condition_id = self._condition_id[env_ids]
+            q = self._seed_q[condition_id].clone()
+            q += self.cfg.initial_joint_noise_std * torch.randn_like(q)
+            dq = self._seed_dq[condition_id].clone()
+            prev_action = None
         self.robot.write_joint_state_to_sim(q, dq, env_ids=env_ids)
         self.robot.set_joint_position_target(q, env_ids=env_ids)
+        # the base-class reset synced command anchors to the home posture;
+        # re-anchor them to the just-written hand-off states
+        self.sync_command_state(env_ids)
 
         self._history_needs_reset[env_ids] = True
         self._base_action[env_ids] = 0.0
@@ -187,6 +249,9 @@ class ResidualArmTrackEnv(ArmTrackEnv):
         self._previous_residual_action[env_ids] = 0.0
         self._residual_delta[env_ids] = 0.0
         self._final_action[env_ids] = 0.0
+        if prev_action is not None:
+            self._last_executed_action[env_ids] = prev_action
+            self._prev_action[env_ids] = prev_action
 
     def _get_observations(self):
         raw_observation = super()._get_observations()["policy"]
@@ -312,6 +377,55 @@ class ResidualArmTrackEnv(ArmTrackEnv):
         else:
             diverged = torch.zeros_like(time_out)
         return diverged, time_out
+
+
+def _load_state_bank(path, device):
+    """Load the per-phase (q, dq, prev_action) bank from clean whole logs.
+
+    Returns tensors plus, per phase tick 0..T-1, the [start, end) sample range
+    (falling back to the nearest populated tick)."""
+    if not os.path.isfile(path):
+        raise FileNotFoundError(
+            f"whole state bank not found: {path}; run "
+            "scripts/prepare_phase1_whole_dataset.py first")
+    data = np.load(path)
+    phase = data["phase_tick"].astype(np.int64)          # sorted
+    ticks = int(data["ticks_per_cycle"])
+    starts = np.searchsorted(phase, np.arange(ticks), side="left")
+    ends = np.searchsorted(phase, np.arange(ticks), side="right")
+    empty = starts == ends
+    if empty.any():
+        populated = np.flatnonzero(~empty)
+        for tick in np.flatnonzero(empty):
+            nearest = populated[np.argmin(np.abs(populated - tick))]
+            starts[tick] = starts[nearest]
+            ends[tick] = ends[nearest]
+    prev_action = data["prev_action"] if "prev_action" in data else (
+        np.zeros_like(data["q"]))
+    return {
+        "q": torch.tensor(data["q"], dtype=torch.float32, device=device),
+        "dq": torch.tensor(data["dq"], dtype=torch.float32, device=device),
+        "prev_action": torch.tensor(
+            prev_action, dtype=torch.float32, device=device),
+        "range_start": torch.tensor(
+            starts, dtype=torch.long, device=device),
+        "range_end": torch.tensor(ends, dtype=torch.long, device=device),
+        "ticks": ticks,
+    }
+
+
+def _draw_bank_states(bank, start_phase):
+    """start_phase (E,) long -> (q, dq, prev_action) sampled from the bank."""
+    lo = bank["range_start"][start_phase]
+    hi = bank["range_end"][start_phase]
+    pick = lo + (torch.rand_like(lo, dtype=torch.float32)
+                 * (hi - lo).float()).long().clamp(min=0)
+    pick = torch.minimum(pick, hi - 1)
+    return (
+        bank["q"][pick].clone(),
+        bank["dq"][pick].clone(),
+        bank["prev_action"][pick].clone(),
+    )
 
 
 def _load_seed_states(device):

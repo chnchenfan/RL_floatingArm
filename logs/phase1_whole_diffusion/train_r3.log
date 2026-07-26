@@ -1,0 +1,65 @@
+/home/windylab/code/isaac_arm_rl/env_isaaclab/lib/python3.11/site-packages/torch/nn/modules/transformer.py:382: UserWarning: enable_nested_tensor is True, but self.use_nested_tensor is False because encoder_layer.norm_first was True
+  warnings.warn(
+[phase1] train=41340 val=11541 batch=1024 steps=6000 params=886,535 bc_w=0.2 cart_w=0.02 dart_fraction=0.5 obs_noise=0.0 condition_weights=[1.0]
+[phase1] step=    1 train=1.15104 diff=0.97531 bc=0.45860 cart=4.2005 val=1.12143 best=1.12143 deploy_cart=8.9964mm deploy_action=0.49406 best_cart=8.9964mm lr=3.00e-04
+[phase1] step=  100 train=0.22688 diff=0.18730 bc=0.09575 cart=1.0214 val=0.98386 best=0.98386 deploy_cart=8.1623mm deploy_action=0.43124 best_cart=8.1623mm lr=3.00e-04
+[phase1] step=  200 train=0.19840 diff=0.16708 bc=0.07497 cart=0.8164 val=0.82287 best=0.82287 deploy_cart=7.5827mm deploy_action=0.37365 best_cart=7.5827mm lr=2.99e-04
+[phase1] step=  300 train=0.14246 diff=0.12044 bc=0.05689 cart=0.5324 val=0.67527 best=0.67527 deploy_cart=7.1002mm deploy_action=0.33086 best_cart=7.1002mm lr=2.98e-04
+[phase1] step=  400 train=0.12253 diff=0.10474 bc=0.04625 cart=0.4269 val=0.53928 best=0.53928 deploy_cart=6.6099mm deploy_action=0.29511 best_cart=6.6099mm lr=2.97e-04
+[phase1] step=  500 train=0.11218 diff=0.09462 bc=0.04505 cart=0.4274 val=0.45355 best=0.45355 deploy_cart=6.1429mm deploy_action=0.26427 best_cart=6.1429mm lr=2.95e-04 sample_mae=0.2523 first=0.2592
+[phase1] step=  600 train=0.10556 diff=0.08987 bc=0.04089 cart=0.3755 val=0.36820 best=0.36820 deploy_cart=5.7023mm deploy_action=0.23855 best_cart=5.7023mm lr=2.93e-04
+[phase1] step=  700 train=0.10742 diff=0.09299 bc=0.03740 cart=0.3473 val=0.32386 best=0.32386 deploy_cart=5.2486mm deploy_action=0.21498 best_cart=5.2486mm lr=2.91e-04
+[phase1] step=  800 train=0.09931 diff=0.08576 bc=0.03542 cart=0.3232 val=0.26441 best=0.26441 deploy_cart=4.7876mm deploy_action=0.19376 best_cart=4.7876mm lr=2.88e-04
+[phase1] step=  900 train=0.09396 diff=0.08118 bc=0.03376 cart=0.3016 val=0.23779 best=0.23779 deploy_cart=4.3008mm deploy_action=0.17346 best_cart=4.3008mm lr=2.84e-04
+[phase1] step= 1000 train=0.09657 diff=0.08428 bc=0.03274 cart=0.2870 val=0.20043 best=0.20043 deploy_cart=3.8047mm deploy_action=0.15354 best_cart=3.8047mm lr=2.81e-04 sample_mae=0.1565 first=0.1565
+[phase1] step= 1100 train=0.09608 diff=0.08451 bc=0.03118 cart=0.2672 val=0.18069 best=0.18069 deploy_cart=3.3345mm deploy_action=0.13551 best_cart=3.3345mm lr=2.77e-04
+[phase1] step= 1200 train=0.09539 diff=0.08420 bc=0.02984 cart=0.2614 val=0.16569 best=0.16569 deploy_cart=2.8915mm deploy_action=0.11842 best_cart=2.8915mm lr=2.73e-04
+[phase1] step= 1300 train=0.08803 diff=0.07717 bc=0.02861 cart=0.2565 val=0.15441 best=0.15441 deploy_cart=2.5058mm deploy_action=0.10339 best_cart=2.5058mm lr=2.68e-04
+[phase1] step= 1400 train=0.09367 diff=0.08229 bc=0.02903 cart=0.2785 val=0.13960 best=0.13960 deploy_cart=2.1714mm deploy_action=0.09065 best_cart=2.1714mm lr=2.63e-04
+[phase1] step= 1500 train=0.08398 diff=0.07340 bc=0.02784 cart=0.2506 val=0.13414 best=0.13414 deploy_cart=1.8869mm deploy_action=0.07965 best_cart=1.8869mm lr=2.58e-04 sample_mae=0.1048 first=0.0878
+[phase1] step= 1600 train=0.08297 diff=0.07263 bc=0.02752 cart=0.2416 val=0.11861 best=0.11861 deploy_cart=1.6500mm deploy_action=0.07045 best_cart=1.6500mm lr=2.53e-04
+[phase1] step= 1700 train=0.08525 diff=0.07564 bc=0.02559 cart=0.2244 val=0.11092 best=0.11092 deploy_cart=1.4487mm deploy_action=0.06276 best_cart=1.4487mm lr=2.47e-04
+[phase1] step= 1800 train=0.09133 diff=0.08193 bc=0.02542 cart=0.2156 val=0.09179 best=0.09179 deploy_cart=1.2812mm deploy_action=0.05624 best_cart=1.2812mm lr=2.41e-04
+[phase1] step= 1900 train=0.08408 diff=0.07466 bc=0.02487 cart=0.2225 val=0.08808 best=0.08808 deploy_cart=1.1416mm deploy_action=0.05078 best_cart=1.1416mm lr=2.35e-04
+[phase1] step= 2000 train=0.08503 diff=0.07566 bc=0.02533 cart=0.2151 val=0.08393 best=0.08393 deploy_cart=1.0296mm deploy_action=0.04637 best_cart=1.0296mm lr=2.29e-04 sample_mae=0.0753 first=0.0515
+[phase1] step= 2100 train=0.08669 diff=0.07726 bc=0.02477 cart=0.2239 val=0.07877 best=0.07877 deploy_cart=0.9273mm deploy_action=0.04252 best_cart=0.9273mm lr=2.22e-04
+[phase1] step= 2200 train=0.07652 diff=0.06767 bc=0.02420 cart=0.2006 val=0.07997 best=0.07877 deploy_cart=0.8494mm deploy_action=0.03944 best_cart=0.8494mm lr=2.15e-04
+[phase1] step= 2300 train=0.08592 diff=0.07692 bc=0.02403 cart=0.2095 val=0.07861 best=0.07861 deploy_cart=0.7805mm deploy_action=0.03666 best_cart=0.7805mm lr=2.09e-04
+[phase1] step= 2400 train=0.08396 diff=0.07495 bc=0.02390 cart=0.2113 val=0.07111 best=0.07111 deploy_cart=0.7227mm deploy_action=0.03431 best_cart=0.7227mm lr=2.02e-04
+[phase1] step= 2500 train=0.08305 diff=0.07416 bc=0.02334 cart=0.2114 val=0.06683 best=0.06683 deploy_cart=0.6715mm deploy_action=0.03231 best_cart=0.6715mm lr=1.94e-04 sample_mae=0.0590 first=0.0335
+[phase1] step= 2600 train=0.07603 diff=0.06707 bc=0.02364 cart=0.2115 val=0.06837 best=0.06683 deploy_cart=0.6308mm deploy_action=0.03062 best_cart=0.6308mm lr=1.87e-04
+[phase1] step= 2700 train=0.07057 diff=0.06175 bc=0.02411 cart=0.1998 val=0.06466 best=0.06466 deploy_cart=0.5961mm deploy_action=0.02925 best_cart=0.5961mm lr=1.80e-04
+[phase1] step= 2800 train=0.07127 diff=0.06276 bc=0.02303 cart=0.1950 val=0.05957 best=0.05957 deploy_cart=0.5682mm deploy_action=0.02818 best_cart=0.5682mm lr=1.72e-04
+[phase1] step= 2900 train=0.07464 diff=0.06608 bc=0.02278 cart=0.2002 val=0.05983 best=0.05957 deploy_cart=0.5411mm deploy_action=0.02717 best_cart=0.5411mm lr=1.65e-04
+[phase1] step= 3000 train=0.07787 diff=0.06946 bc=0.02259 cart=0.1943 val=0.05852 best=0.05852 deploy_cart=0.5215mm deploy_action=0.02634 best_cart=0.5215mm lr=1.58e-04 sample_mae=0.0502 first=0.0253
+[phase1] step= 3100 train=0.07985 diff=0.07180 bc=0.02198 cart=0.1826 val=0.05938 best=0.05852 deploy_cart=0.4985mm deploy_action=0.02547 best_cart=0.4985mm lr=1.50e-04
+[phase1] step= 3200 train=0.07712 diff=0.06909 bc=0.02185 cart=0.1829 val=0.05487 best=0.05487 deploy_cart=0.4848mm deploy_action=0.02485 best_cart=0.4848mm lr=1.43e-04
+[phase1] step= 3300 train=0.07242 diff=0.06445 bc=0.02129 cart=0.1855 val=0.05436 best=0.05436 deploy_cart=0.4684mm deploy_action=0.02428 best_cart=0.4684mm lr=1.35e-04
+[phase1] step= 3400 train=0.07255 diff=0.06500 bc=0.02035 cart=0.1737 val=0.05793 best=0.05436 deploy_cart=0.4575mm deploy_action=0.02384 best_cart=0.4575mm lr=1.28e-04
+[phase1] step= 3500 train=0.07167 diff=0.06331 bc=0.02246 cart=0.1937 val=0.05558 best=0.05436 deploy_cart=0.4468mm deploy_action=0.02339 best_cart=0.4468mm lr=1.21e-04 sample_mae=0.0448 first=0.0211
+[phase1] step= 3600 train=0.07996 diff=0.07216 bc=0.02087 cart=0.1812 val=0.05885 best=0.05436 deploy_cart=0.4382mm deploy_action=0.02303 best_cart=0.4382mm lr=1.13e-04
+[phase1] step= 3700 train=0.07137 diff=0.06337 bc=0.02171 cart=0.1831 val=0.05222 best=0.05222 deploy_cart=0.4300mm deploy_action=0.02269 best_cart=0.4300mm lr=1.06e-04
+[phase1] step= 3800 train=0.07415 diff=0.06703 bc=0.01942 cart=0.1619 val=0.04778 best=0.04778 deploy_cart=0.4243mm deploy_action=0.02247 best_cart=0.4243mm lr=9.95e-05
+[phase1] step= 3900 train=0.07613 diff=0.06878 bc=0.02003 cart=0.1671 val=0.05137 best=0.04778 deploy_cart=0.4170mm deploy_action=0.02217 best_cart=0.4170mm lr=9.28e-05
+[phase1] step= 4000 train=0.07342 diff=0.06578 bc=0.02116 cart=0.1704 val=0.05212 best=0.04778 deploy_cart=0.4116mm deploy_action=0.02192 best_cart=0.4116mm lr=8.63e-05 sample_mae=0.0416 first=0.0190
+[phase1] step= 4100 train=0.07384 diff=0.06629 bc=0.02060 cart=0.1714 val=0.04670 best=0.04670 deploy_cart=0.4066mm deploy_action=0.02170 best_cart=0.4066mm lr=7.99e-05
+[phase1] step= 4200 train=0.06937 diff=0.06197 bc=0.01996 cart=0.1707 val=0.05029 best=0.04670 deploy_cart=0.4029mm deploy_action=0.02157 best_cart=0.4029mm lr=7.37e-05
+[phase1] step= 4300 train=0.07524 diff=0.06785 bc=0.02031 cart=0.1662 val=0.05463 best=0.04670 deploy_cart=0.3999mm deploy_action=0.02145 best_cart=0.3999mm lr=6.78e-05
+[phase1] step= 4400 train=0.07736 diff=0.07035 bc=0.01948 cart=0.1556 val=0.04744 best=0.04670 deploy_cart=0.3955mm deploy_action=0.02127 best_cart=0.3955mm lr=6.21e-05
+[phase1] step= 4500 train=0.07241 diff=0.06522 bc=0.01966 cart=0.1630 val=0.05166 best=0.04670 deploy_cart=0.3916mm deploy_action=0.02113 best_cart=0.3916mm lr=5.67e-05 sample_mae=0.0394 first=0.0178
+[phase1] step= 4600 train=0.07672 diff=0.06931 bc=0.02057 cart=0.1645 val=0.04564 best=0.04564 deploy_cart=0.3877mm deploy_action=0.02101 best_cart=0.3877mm lr=5.16e-05
+[phase1] step= 4700 train=0.07179 diff=0.06432 bc=0.01992 cart=0.1745 val=0.04785 best=0.04564 deploy_cart=0.3852mm deploy_action=0.02091 best_cart=0.3852mm lr=4.68e-05
+[phase1] step= 4800 train=0.06502 diff=0.05802 bc=0.01914 cart=0.1588 val=0.05414 best=0.04564 deploy_cart=0.3847mm deploy_action=0.02086 best_cart=0.3847mm lr=4.22e-05
+[phase1] step= 4900 train=0.06978 diff=0.06245 bc=0.02020 cart=0.1642 val=0.04631 best=0.04564 deploy_cart=0.3822mm deploy_action=0.02077 best_cart=0.3822mm lr=3.80e-05
+[phase1] step= 5000 train=0.07809 diff=0.07083 bc=0.01996 cart=0.1636 val=0.04900 best=0.04564 deploy_cart=0.3810mm deploy_action=0.02070 best_cart=0.3810mm lr=3.41e-05 sample_mae=0.0379 first=0.0168
+[phase1] step= 5100 train=0.07829 diff=0.07099 bc=0.01990 cart=0.1661 val=0.04978 best=0.04564 deploy_cart=0.3799mm deploy_action=0.02061 best_cart=0.3799mm lr=3.05e-05
+[phase1] step= 5200 train=0.07302 diff=0.06561 bc=0.02045 cart=0.1658 val=0.05106 best=0.04564 deploy_cart=0.3788mm deploy_action=0.02059 best_cart=0.3788mm lr=2.73e-05
+[phase1] step= 5300 train=0.07069 diff=0.06356 bc=0.01921 cart=0.1641 val=0.05294 best=0.04564 deploy_cart=0.3757mm deploy_action=0.02051 best_cart=0.3757mm lr=2.45e-05
+[phase1] step= 5400 train=0.06749 diff=0.06051 bc=0.01923 cart=0.1564 val=0.04976 best=0.04564 deploy_cart=0.3745mm deploy_action=0.02044 best_cart=0.3745mm lr=2.20e-05
+[phase1] step= 5500 train=0.07050 diff=0.06322 bc=0.01982 cart=0.1658 val=0.05413 best=0.04564 deploy_cart=0.3742mm deploy_action=0.02040 best_cart=0.3742mm lr=1.99e-05 sample_mae=0.0369 first=0.0164
+[phase1] step= 5600 train=0.07101 diff=0.06345 bc=0.02037 cart=0.1743 val=0.04721 best=0.04564 deploy_cart=0.3731mm deploy_action=0.02034 best_cart=0.3731mm lr=1.81e-05
+[phase1] step= 5700 train=0.07038 diff=0.06338 bc=0.01951 cart=0.1550 val=0.05017 best=0.04564 deploy_cart=0.3708mm deploy_action=0.02028 best_cart=0.3708mm lr=1.68e-05
+[phase1] step= 5800 train=0.06757 diff=0.06017 bc=0.02034 cart=0.1665 val=0.05011 best=0.04564 deploy_cart=0.3702mm deploy_action=0.02025 best_cart=0.3702mm lr=1.58e-05
+[phase1] step= 5900 train=0.06991 diff=0.06252 bc=0.02004 cart=0.1690 val=0.04379 best=0.04379 deploy_cart=0.3688mm deploy_action=0.02022 best_cart=0.3688mm lr=1.52e-05
+[phase1] step= 6000 train=0.07510 diff=0.06831 bc=0.01868 cart=0.1528 val=0.04948 best=0.04379 deploy_cart=0.3689mm deploy_action=0.02019 best_cart=0.3688mm lr=1.50e-05 sample_mae=0.0361 first=0.0161
+[phase1] DONE output=/home/windylab/code/isaac_arm_rl/logs/phase1_whole_diffusion/policy_whole_r3.pt best_val=0.04379 best_cart=0.3688mm elapsed=192.6s

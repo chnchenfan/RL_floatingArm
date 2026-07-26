@@ -70,6 +70,18 @@ class ArmTrackEnvCfg(DirectRLEnvCfg):
     inertial_coupling: bool = True
     # single-circle (config-matched moving_base_circle) for the precision task
     single_circle: bool = False
+    # frozen exact whole task (five stations, one-shot windylab, 73.039 s)
+    whole_task: bool = False
+    # multiplicative jitter around the config-matched whole base motion
+    whole_disturbance_jitter: float = 0.10
+    # apply the position target one control tick late, matching the observed
+    # MPC-plant latency (q_obs(k+1) = q_cmd(k-1) in the loop CSVs)
+    command_delay_ticks: int = 0
+    # override the actuator PD at startup (0 = keep the USD/actuator default).
+    # The whole task uses 80000/4000: high damping realizes the ramp velocity
+    # feedforward like the deployed smooth position controller (tau = kd/kp)
+    plant_stiffness: float = 0.0
+    plant_damping: float = 0.0
     ik_damping: float = 0.03           # damped-least-squares lambda for the expert
     ik_gain: float = 1.5               # step gain for the IK expert (lead the lag)
     ik_lookahead: int = 1              # aim N ticks ahead to cancel tracking lag
@@ -85,12 +97,26 @@ class ArmTrackEnv(DirectRLEnv):
         self.robot = self.scene["robot"]
         self._ee_idx = self.robot.body_names.index("link7")
         self._dt = 1.0 / CONTROL_HZ
+        if cfg.whole_task and cfg.single_circle:
+            raise ValueError("whole_task and single_circle are exclusive")
         self.targets = TaskTargets(
             self.device,
             dt=self._dt,
-            base_nominal=(0.0, 0.0, 0.01) if cfg.single_circle else (0.0, 0.0, 0.0),
+            base_nominal=(
+                (0.0, 0.0, 0.01) if (cfg.single_circle or cfg.whole_task)
+                else (0.0, 0.0, 0.0)),
             moving_base_circle=cfg.single_circle,
+            whole=cfg.whole_task,
         )
+
+        if cfg.plant_stiffness > 0.0:
+            self.robot.write_joint_stiffness_to_sim(
+                torch.full((self.num_envs, 7), cfg.plant_stiffness,
+                           device=self.device))
+        if cfg.plant_damping > 0.0:
+            self.robot.write_joint_damping_to_sim(
+                torch.full((self.num_envs, 7), cfg.plant_damping,
+                           device=self.device))
 
         # joint limits (fall back to +-pi where infinite)
         lim = self.robot.data.joint_pos_limits[0]          # (nJ, 2)
@@ -102,17 +128,27 @@ class ArmTrackEnv(DirectRLEnv):
         self._nbodies = self._mass.shape[0]
 
         n = self.num_envs
-        self._dist = (self.targets.sample_circle_disturbance(n) if cfg.single_circle
-                      else self.targets.sample_disturbance(n))
+        self._dist = self._sample_dist(n)
         self._start = (torch.randint(0, self.targets.T, (n,), device=self.device)
                        if cfg.start_phase_random
                        else torch.zeros(n, dtype=torch.long, device=self.device))
         self._prev_action = torch.zeros(n, 7, device=self.device)
         self.actions = torch.zeros(n, 7, device=self.device)
+        self._delayed_target = None
+        self._ramp_goal = None
+        self._substep = 0
         # This is the action already executed by the plant.  It appears in the
         # next observation as a_{t-1}; keeping a separate, explicit buffer avoids
         # accidentally pairing obs_t with label a_t in Phase-1 offline datasets.
         self._last_executed_action = torch.zeros(n, 7, device=self.device)
+
+    def _sample_dist(self, n):
+        if self.cfg.whole_task:
+            return self.targets.sample_whole_disturbance(
+                n, jitter=self.cfg.whole_disturbance_jitter)
+        if self.cfg.single_circle:
+            return self.targets.sample_circle_disturbance(n)
+        return self.targets.sample_disturbance(n)
 
     # ------------------------------------------------------------------ scene
     def _setup_scene(self):
@@ -124,17 +160,49 @@ class ArmTrackEnv(DirectRLEnv):
     def _pre_physics_step(self, actions: torch.Tensor):
         self.actions = actions.clamp(-1.0, 1.0)
         self._last_executed_action.copy_(self.actions)
-
-    def _apply_action(self):
+        # Compute the position target ONCE per control tick.  Recomputing it
+        # from the moving joint state inside every physics substep executed
+        # ~1.25x the commanded delta per tick (measured), which breaks the
+        # `q_{k+1} = q_k + a*max_joint_step` contract the MPC data follows.
         q = self.robot.data.joint_pos
         target = q + self.actions * self.cfg.max_joint_step
         target = torch.clamp(target, self.q_lo, self.q_hi)
+        # final joint position command; the live RViz bridge republishes this
+        # as /student/joint_command for the MPC trajectory visualizer
+        self._q_command = target
+        if self._ramp_goal is None:
+            self._ramp_goal = q.clone()
+        if self.cfg.command_delay_ticks > 0:
+            if self._delayed_target is None:
+                self._delayed_target = target.clone()
+            goal = self._delayed_target
+            self._delayed_target = target.clone()
+        else:
+            goal = target
+        # The plant tracks a within-tick linear ramp from last tick's goal to
+        # this tick's goal (the ROS smooth position controller follows the
+        # velocity-feedforward ramp, not a step).  This realizes 100% of each
+        # commanded delta per tick with a smooth velocity ~ delta/dt.
+        self._ramp_from = self._ramp_goal
+        self._ramp_goal = goal.clone()
+        self._substep = 0
+
+    def _apply_action(self):
+        self._substep = min(self._substep + 1, self.cfg.decimation)
+        fraction = self._substep / self.cfg.decimation
+        target = self._ramp_from + fraction * (
+            self._ramp_goal - self._ramp_from)
         self.robot.set_joint_position_target(target)
+        # velocity feedforward along the ramp: with kd >> 0 the PhysX drive
+        # realizes v = v_ff + (kp/kd)(q_t - q), the same control law as the
+        # deployed smooth position controller (kp/kd = 1/tau)
+        self.robot.set_joint_velocity_target(
+            (self._ramp_goal - self._ramp_from) / self._dt)
 
         if self.cfg.inertial_coupling:
             # shaking-base inertial coupling: fictitious force -m_i * a(t) on every
             # link (world frame). a(t) is the base linear acceleration this tick.
-            a = self.targets.base_accel(self._phase() % self.targets.T, self._dist)
+            a = self.targets.base_accel(self._phase(), self._dist)
             forces = -(self._mass.view(1, self._nbodies, 1)
                        * a.view(self.num_envs, 1, 3))       # (E, nBodies, 3)
             torques = torch.zeros_like(forces)
@@ -255,8 +323,7 @@ class ArmTrackEnv(DirectRLEnv):
         qd = torch.zeros(n, 7, device=self.device)
         self.robot.write_joint_state_to_sim(q, qd, env_ids=env_ids)
         # resample disturbance + phase for these envs
-        d = (self.targets.sample_circle_disturbance(n) if self.cfg.single_circle
-             else self.targets.sample_disturbance(n))
+        d = self._sample_dist(n)
         for k, v in d.items():
             self._dist[k][env_ids] = v
         if self.cfg.start_phase_random:
@@ -265,6 +332,23 @@ class ArmTrackEnv(DirectRLEnv):
         self._prev_action[env_ids] = 0.0
         self.actions[env_ids] = 0.0
         self._last_executed_action[env_ids] = 0.0
+        self.sync_command_state(env_ids)
+
+    def sync_command_state(self, env_ids=None):
+        """Re-anchor the delayed/ramp command buffers to the current joint
+        state.  Must be called after writing joint states manually (resets,
+        eval seeding), or the first tick would ramp from a stale target."""
+        q = self.robot.data.joint_pos
+        if env_ids is None:
+            if self._delayed_target is not None:
+                self._delayed_target.copy_(q)
+            if self._ramp_goal is not None:
+                self._ramp_goal.copy_(q)
+            return
+        if self._delayed_target is not None:
+            self._delayed_target[env_ids] = q[env_ids]
+        if self._ramp_goal is not None:
+            self._ramp_goal[env_ids] = q[env_ids]
 
 
 def _so3_log(R):

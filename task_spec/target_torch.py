@@ -18,6 +18,7 @@ import torch
 
 from .task_model import TaskModel
 from .shapes import ORIENTATION_TARGET
+from . import whole_trajectory as _whole
 
 
 def _rpy_to_R(rpy):
@@ -48,12 +49,38 @@ class TaskTargets:
                  amp_trans=(0.01, 0.05), amp_att_deg=(0.5, 3.0),
                  freq=(0.5, 5.0), schedule=None,
                  base_nominal=(0.0, 0.0, 0.0),
-                 moving_base_circle=False):
+                 moving_base_circle=False,
+                 whole=False):
         self.device = device
         self.dt = dt
         self.amp_trans = amp_trans
         self.amp_att = (math.radians(amp_att_deg[0]), math.radians(amp_att_deg[1]))
         self.freq = freq
+
+        if whole:
+            # Frozen exact whole task (task_spec/whole_trajectory.py, parity
+            # tested against the authoritative MPC source).  Tables include the
+            # station-facing nominal base yaw and pen/stroke/task semantics.
+            tables = _whole.build_tables(dt=dt)
+            self.period = float(tables["period"])
+            self.T = int(tables["T"])
+            self.ws_pos = torch.tensor(
+                tables["pos"], dtype=torch.float32, device=device)
+            self.ws_R = torch.tensor(
+                tables["rot"], dtype=torch.float32, device=device)
+            self.yaw = torch.tensor(
+                tables["yaw"], dtype=torch.float32, device=device)
+            self.draw = torch.tensor(
+                tables["pen"].astype(np.float32), device=device)
+            self.pen = torch.tensor(
+                tables["pen"], dtype=torch.bool, device=device)
+            self.task_id = torch.tensor(
+                tables["task"], dtype=torch.long, device=device)
+            self.stroke_id = torch.tensor(
+                tables["stroke"], dtype=torch.long, device=device)
+            self.base_nominal = torch.tensor(
+                base_nominal, dtype=torch.float32, device=device)
+            return
 
         # ----- common tables from the numpy TaskModel (no base jitter here; we
         # add the per-env disturbance ourselves) -----
@@ -102,6 +129,30 @@ class TaskTargets:
             "freq_t": u(*self.freq),
             "freq_a": u(*self.freq),
             "phase": u(0.0, 2 * math.pi),
+        }
+
+    def sample_whole_disturbance(self, n, jitter=0.10):
+        """Config-matched whole-task base disturbance: xy circle r=0.01 m,
+        z amplitude 0.01 m at 2 Hz (BASE_PERIOD 0.5 s), attitude 0.1 deg,
+        with small multiplicative jitter for robustness.  jitter=0 reproduces
+        the deployed MPC base motion exactly (phase 0)."""
+        d = self.device
+
+        def f():
+            return 1.0 + jitter * (2.0 * torch.rand(n, device=d) - 1.0)
+
+        # translation and attitude jitter share one base period in the config
+        freq = (1.0 / _whole.BASE_PERIOD_SEC) * f()
+        return {
+            "wave_t": torch.zeros(n, dtype=torch.long, device=d),   # circle xy
+            "wave_a": torch.ones(n, dtype=torch.long, device=d),    # rpy sine
+            "amp_t": _whole.BASE_CIRCLE_RADIUS * f(),
+            "amp_z": _whole.BASE_Z_AMPLITUDE * f(),
+            "z_phase": torch.full((n,), _whole.BASE_Z_PHASE, device=d),
+            "amp_a": _whole.BASE_ATTITUDE_AMPLITUDE_RAD * f(),
+            "freq_t": freq,
+            "freq_a": freq.clone(),
+            "phase": torch.zeros(n, device=d),
         }
 
     def sample_circle_disturbance(self, n):
@@ -164,9 +215,13 @@ class TaskTargets:
         }
         return self._sweep
 
-    def base_pose(self, idx, dist):
-        """idx (E,) long episode-phase index. Returns pos (E,3), R (E,3,3)."""
-        t = idx.float() * self.dt
+    def base_pose(self, step, dist):
+        """step (E,) long UNWRAPPED tick count. Returns pos (E,3), R (E,3,3).
+
+        The jitter waveforms run on the continuous episode clock (as in the
+        MPC, where base time never wraps); only the nominal-yaw table lookup
+        wraps at the task period."""
+        t = step.float() * self.dt
         dpos = dist["amp_t"][:, None] * self._wave(dist["wave_t"], t,
                                                    dist["freq_t"], dist["phase"])
         if "amp_z" in dist:
@@ -174,7 +229,7 @@ class TaskTargets:
                 2 * math.pi * dist["freq_t"] * t + dist["z_phase"])
         drpy = dist["amp_a"][:, None] * self._wave(dist["wave_a"], t,
                                                    dist["freq_a"], dist["phase"])
-        yaw = self.yaw[idx]
+        yaw = self.yaw[step % self.T]
         z = torch.zeros_like(yaw)
         R = _rpy_to_R(torch.stack([z, z, yaw], -1)) @ _rpy_to_R(drpy)
         pos = self.base_nominal[None, :] + dpos
@@ -184,8 +239,7 @@ class TaskTargets:
         """World-frame linear acceleration (E,3) of the base from the translation
         disturbance. For sinusoidal components d2/dt2 = -w^2 * pos (exact for
         circle/sine, bounded approx for oscillate/noise)."""
-        idx = step_env % self.T
-        t = idx.float() * self.dt
+        t = step_env.float() * self.dt
         dpos = dist["amp_t"][:, None] * self._wave(dist["wave_t"], t,
                                                    dist["freq_t"], dist["phase"])
         w = 2 * math.pi * dist["freq_t"]
@@ -201,15 +255,15 @@ class TaskTargets:
         ``base_pose``. This keeps the feature valid for every waveform and
         makes the offline and Isaac observation contracts easy to reproduce.
         """
-        p_next, _ = self.base_pose((step_env + 1) % self.T, dist)
-        p_prev, _ = self.base_pose((step_env - 1) % self.T, dist)
+        p_next, _ = self.base_pose(step_env + 1, dist)
+        p_prev, _ = self.base_pose(step_env - 1, dist)
         return (p_next - p_prev) / (2.0 * self.dt)
 
     def ee_target_base(self, step_env, dist):
         """step_env (E,) long. Returns base-frame target pos (E,3), R (E,3,3),
         drawing flag (E,)."""
         idx = step_env % self.T
-        bp, bR = self.base_pose(idx, dist)
+        bp, bR = self.base_pose(step_env, dist)
         p_w = self.ws_pos[idx]
         R_w = self.ws_R[idx]
         RT = bR.transpose(1, 2)

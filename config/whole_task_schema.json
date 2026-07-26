@@ -1,0 +1,54 @@
+{
+  "schema_version": "whole_v2_oneshot_73.0394904589",
+  "frozen_utc": "2026-07-26",
+  "authoritative_source": "/home/windylab/code/windylab_ws/src/arm-platform/demo/moving_base_trajectory_config.py",
+  "authoritative_source_sha256": "0d0181b736f8b00f82e6559ce55358c36fab8f263792d5667e279c49bb8042e5",
+  "mpc_demo_source": "/home/windylab/code/windylab_ws/src/arm-platform/demo/move_base_circle_mpc_ik_demo.py",
+  "mpc_demo_sha256": "afbf6bbd5e9e3fd6d015e78496a461c3c19ec379544115433dd913e20cf7af99",
+  "rl_spec_module": "task_spec/whole_trajectory.py",
+  "parity_test": "tests/test_whole_trajectory_parity.py",
+  "whole_period_sec": 73.03949045888578,
+  "windylab_once_period_sec": 29.03949045888578,
+  "windylab_standalone_period_sec": 32.58951836053247,
+  "control_hz": 50.0,
+  "ticks_per_cycle": 3652,
+  "task_order": [
+    {"index": 0, "shape": "circle", "station": "front", "draw_sec": 4.0, "azimuth_rad": 0.0},
+    {"index": 1, "shape": "triangle", "station": "left", "draw_sec": 6.0, "azimuth_rad": 1.5707963267948966},
+    {"index": 2, "shape": "windylab", "station": "back", "draw_sec": 29.03949045888578, "azimuth_rad": 3.141592653589793, "one_shot": true},
+    {"index": 3, "shape": "sine", "station": "right", "draw_sec": 8.0, "azimuth_rad": 4.71238898038469},
+    {"index": 4, "shape": "square", "station": "top", "draw_sec": 8.0, "azimuth_rad": 6.283185307179586}
+  ],
+  "transition": {"lift_sec": 0.6, "transfer_sec": 2.4, "lower_sec": 0.6, "count_per_cycle": 5},
+  "geometry": {
+    "side_station_radius_m": 0.30,
+    "side_station_height_m": 0.12,
+    "top_station_forward_m": 0.22,
+    "top_station_height_m": 0.30,
+    "pen_lift_height_m": 0.03,
+    "draw_speed_mps": 0.04,
+    "travel_speed_mps": 0.08
+  },
+  "base_motion": {
+    "shape": "circle_z",
+    "circle_radius_m": 0.01,
+    "period_sec": 0.5,
+    "height_m": 0.01,
+    "z_amplitude_m": 0.01,
+    "z_phase_rad": 1.0471975511965976,
+    "attitude_amplitude_deg": 0.1
+  },
+  "pen_down_stroke_count": 14,
+  "stroke_id_encoding": "cycle*10000 + task_index*100 + local_stroke; -1 = pen-up",
+  "action_contract": {
+    "type": "joint position delta per 20ms tick",
+    "max_joint_step_rad": 0.04,
+    "note": "matches MPC max_joint_step 0.04 of the 2026-07-26 final whole config (old circle task used 0.02)"
+  },
+  "mpc_baseline": {
+    "loop_csv": "moving_base_mpc_loop_20260726_021045.csv",
+    "visualizer_csv": "moving_base_circle_whole_trajectory_20260726_021228.csv",
+    "whole_rms_mm": 0.27, "whole_p95_mm": 0.43, "whole_max_mm": 0.82,
+    "orientation_mean_deg": 2.05, "orientation_p95_deg": 4.02, "orientation_max_deg": 6.33
+  }
+}
