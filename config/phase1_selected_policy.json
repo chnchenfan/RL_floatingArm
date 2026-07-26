@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "checkpoint": "/home/windylab/code/isaac_arm_rl/logs/phase1_diffusion/policy_precision.pt",
+  "observation_version": 2,
+  "observation_dim": 47,
+  "observation_horizon": 2,
+  "action_horizon": 8,
+  "action_scale_rad": 0.02,
+  "deployment": {
+    "deterministic_ddim": true,
+    "ddim_steps": 8,
+    "execute_horizon": 1,
+    "action_gain_by_condition": [
+      {
+        "base_radius_m": 0.02,
+        "base_period_s": 1.0,
+        "base_z_amplitude_m": 0.0,
+        "gain": 0.87
+      },
+      {
+        "base_radius_m": 0.02,
+        "base_period_s": 1.0,
+        "base_z_amplitude_m": 0.02,
+        "gain": 0.9
+      },
+      {
+        "base_radius_m": 0.01,
+        "base_period_s": 0.5,
+        "base_z_amplitude_m": 0.01,
+        "gain": 0.93
+      }
+    ]
+  },
+  "validation": {
+    "environments": 4096,
+    "ticks": 400,
+    "initial_joint_noise_std_rad": 0.002,
+    "log": "/home/windylab/code/isaac_arm_rl/logs/phase1_diffusion/eval/eval_4096_precision_calibrated_q002.log",
+    "divergence_threshold_m": 0.05
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "controller": "phase1_diffusion_plus_phase2_residual",
+  "batch_size": 1,
+  "warmup_iterations": 30,
+  "measured_iterations": 500,
+  "deterministic_ddim_steps": 8,
+  "residual_scale": 0.1,
+  "device": "cuda:0",
+  "gpu": "NVIDIA GeForce RTX 5060 Laptop GPU",
+  "torch_version": "2.7.0+cu128",
+  "python_version": "3.11.15",
+  "phase1_diffusion": {
+    "mean_ms": 5.77642205999291,
+    "p50_ms": 5.64173849988947,
+    "p95_ms": 6.448333149819518,
+    "p99_ms": 6.671330929821124,
+    "max_ms": 6.8442040001173154
+  },
+  "phase2_residual_and_composition": {
+    "mean_ms": 0.2993169159926765,
+    "p50_ms": 0.1858255000115605,
+    "p95_ms": 0.9049691498603352,
+    "p99_ms": 1.1043955493823883,
+    "max_ms": 1.2985409994143993
+  },
+  "full_controller": {
+    "mean_ms": 6.090151217997118,
+    "p50_ms": 5.920595999668876,
+    "p95_ms": 6.85043529961149,
+    "p99_ms": 6.992788739817115,
+    "max_ms": 7.106254000063927
+  },
+  "control_period_ms_at_50hz": 20.0,
+  "full_controller_deadline_fraction": 1.0,
+  "sample_final_action": [
+    0.18899326026439667,
+    -0.04250195249915123,
+    0.11845443397760391,
+    -0.2609139084815979,
+    -0.008295408450067043,
+    -0.020549990236759186,
+    -0.009866014122962952
+  ]
+}

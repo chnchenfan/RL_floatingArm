@@ -1,0 +1,50 @@
+# Local Python and Isaac Sim environments
+env_isaaclab/
+.venv/
+venv/
+
+# Python/test caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Editor and OS files
+.vscode/
+.idea/
+*~
+.DS_Store
+
+# Isaac Sim runtime caches and crash/log output
+kit/
+cache/
+crashdumps/
+*.dmp
+
+# Generated training logs and checkpoints. Keep only the selected policies
+# referenced by config/ and required for a runnable clone.
+logs/**
+!logs/phase1_diffusion/
+logs/phase1_diffusion/**
+!logs/phase1_diffusion/policy_precision.pt
+!logs/phase2_residual/
+logs/phase2_residual/**
+!logs/phase2_residual/20260725_011102_robust_worldforce_orientation/
+logs/phase2_residual/20260725_011102_robust_worldforce_orientation/**
+!logs/phase2_residual/20260725_011102_robust_worldforce_orientation/model_950.pt
+!logs/phase2_residual/eval/
+logs/phase2_residual/eval/**
+!logs/phase2_residual/eval/20260725_031443_random_handoff_inertia_envs4096/
+logs/phase2_residual/eval/20260725_031443_random_handoff_inertia_envs4096/**
+!logs/phase2_residual/eval/20260725_031443_random_handoff_inertia_envs4096/summary.json
+
+# Duplicated handoff bundles and archives; deployment exports remain tracked.
+exports/chatgpt_handoff_*/
+exports/chatgpt_handoff_*.zip
+
+# Local process and scratch files
+*.pid
+*.status.tmp
+*.swp
+*.tmp

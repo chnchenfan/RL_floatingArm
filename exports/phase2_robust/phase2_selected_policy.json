@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "phase": 2,
+  "selection": "robust_priority",
+  "algorithm": "bounded_residual_ppo_orientation_safe",
+  "base_policy_config": "/home/windylab/code/isaac_arm_rl/config/phase1_selected_policy.json",
+  "checkpoint": "/home/windylab/code/isaac_arm_rl/logs/phase2_residual/20260725_011102_robust_worldforce_orientation/model_950.pt",
+  "checkpoint_iteration": 950,
+  "observation_dim": 54,
+  "action_dim": 7,
+  "deployment": {
+    "residual_scale": 0.1,
+    "residual_clip": [
+      -1.0,
+      1.0
+    ],
+    "final_action_clip": [
+      -1.0,
+      1.0
+    ],
+    "formula": "a_final = clip(a_phase1 + 0.10 * clip(a_residual, -1, 1), -1, 1)"
+  },
+  "validation": {
+    "protocol": "paired_random_mpc_handoff",
+    "inertial_coupling": true,
+    "inertial_force_frame": "world",
+    "environments": 4096,
+    "ticks": 400,
+    "initial_joint_noise_std_rad": 0.002,
+    "divergence_threshold_m": 0.05,
+    "summary": "/home/windylab/code/isaac_arm_rl/logs/phase2_residual/eval/20260725_031443_random_handoff_inertia_envs4096/summary.json",
+    "log": "/home/windylab/code/isaac_arm_rl/logs/phase2_residual/eval_robust_confirm_4096_clean.log",
+    "baseline": {
+      "position_mean_mm": 1.4072250127792358,
+      "position_p95_mm": 2.935520887374878,
+      "position_p99_mm": 3.6419074535369873,
+      "orientation_mean_deg": 3.5704174041748047,
+      "orientation_p95_deg": 6.812587261199951,
+      "diverged_fraction": 0.0
+    },
+    "selected": {
+      "position_mean_mm": 0.6458982825279236,
+      "position_p95_mm": 1.3886806964874268,
+      "position_p99_mm": 1.6863847970962524,
+      "orientation_mean_deg": 3.4054112434387207,
+      "orientation_p95_deg": 6.1579742431640625,
+      "final_action_saturation_fraction": 0.00006495884736068547,
+      "paired_position_win_fraction": 1.0,
+      "diverged_fraction": 0.0
+    },
+    "relative_improvement_percent": {
+      "position_mean": 54.10127899501375,
+      "position_p95": 52.69389148413555,
+      "position_p99": 53.69501233595459,
+      "orientation_mean": 4.621480965870998,
+      "orientation_p95": 9.608875349958995
+    },
+    "no_inertia_safety_summary": "/home/windylab/code/isaac_arm_rl/logs/phase2_residual/eval/20260725_032122_random_handoff_noinertia_envs1024/summary.json"
+  },
+  "precision_priority_alternative": {
+    "checkpoint": "/home/windylab/code/isaac_arm_rl/logs/phase2_residual/20260725_011102_robust_worldforce_orientation/model_950.pt",
+    "residual_scale": 0.15,
+    "position_mean_mm": 0.5348983407020569,
+    "orientation_mean_deg": 3.739506959915161
+  }
+}

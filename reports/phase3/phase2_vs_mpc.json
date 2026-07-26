@@ -1,0 +1,341 @@
+{
+  "schema_version": 1,
+  "scope": {
+    "phase2": "Isaac paired random-handoff validation with inertial coupling",
+    "mpc": "measured-joint FK reconstruction from clean acados ROS logs",
+    "strict_same_plant_ab_test": false
+  },
+  "phase2_selection": {
+    "checkpoint": "/home/windylab/code/isaac_arm_rl/logs/phase2_residual/20260725_011102_robust_worldforce_orientation/model_950.pt",
+    "residual_scale": 0.1,
+    "validation_summary": "/home/windylab/code/isaac_arm_rl/logs/phase2_residual/eval/20260725_031443_random_handoff_inertia_envs4096/summary.json",
+    "num_envs": 4096,
+    "steps": 400,
+    "overall": {
+      "mean_mm": 0.6458982825279236,
+      "rms_mm": 0.7479389309883118,
+      "p95_mm": 1.3886806964874268,
+      "p99_mm": 1.6863847970962524,
+      "max_mm": 9.083549499511719,
+      "env_max_p95_mm": 3.9427618980407715,
+      "diverged_fraction": 0.0,
+      "orientation_mean_deg": 3.4054112434387207,
+      "orientation_p95_deg": 6.1579742431640625
+    },
+    "conditions": {
+      "easy": {
+        "mean_mm": 0.34247279167175293,
+        "rms_mm": 0.3768206834793091,
+        "p95_mm": 0.6790212988853455,
+        "p99_mm": 0.7870910167694092,
+        "max_mm": 3.206613540649414,
+        "env_max_p95_mm": 0.986794650554657,
+        "diverged_fraction": 0.0,
+        "orientation_mean_deg": 2.387430191040039,
+        "orientation_p95_deg": 3.541768789291382
+      },
+      "medium": {
+        "mean_mm": 0.670004665851593,
+        "rms_mm": 0.7312502264976501,
+        "p95_mm": 1.228376030921936,
+        "p99_mm": 1.499029517173767,
+        "max_mm": 6.991157531738281,
+        "env_max_p95_mm": 3.0966076850891113,
+        "diverged_fraction": 0.0,
+        "orientation_mean_deg": 4.044914722442627,
+        "orientation_p95_deg": 6.46987247467041
+      },
+      "hard": {
+        "mean_mm": 0.925439715385437,
+        "rms_mm": 1.0009112358093262,
+        "p95_mm": 1.5728697776794434,
+        "p99_mm": 1.8155035972595215,
+        "max_mm": 9.083549499511719,
+        "env_max_p95_mm": 4.51996374130249,
+        "diverged_fraction": 0.0,
+        "orientation_mean_deg": 3.784634590148926,
+        "orientation_p95_deg": 6.4041972160339355
+      }
+    }
+  },
+  "phase2_policy_latency": {
+    "schema_version": 1,
+    "controller": "phase1_diffusion_plus_phase2_residual",
+    "batch_size": 1,
+    "warmup_iterations": 30,
+    "measured_iterations": 500,
+    "deterministic_ddim_steps": 8,
+    "residual_scale": 0.1,
+    "device": "cuda:0",
+    "gpu": "NVIDIA GeForce RTX 5060 Laptop GPU",
+    "torch_version": "2.7.0+cu128",
+    "python_version": "3.11.15",
+    "phase1_diffusion": {
+      "mean_ms": 5.77642205999291,
+      "p50_ms": 5.64173849988947,
+      "p95_ms": 6.448333149819518,
+      "p99_ms": 6.671330929821124,
+      "max_ms": 6.8442040001173154
+    },
+    "phase2_residual_and_composition": {
+      "mean_ms": 0.2993169159926765,
+      "p50_ms": 0.1858255000115605,
+      "p95_ms": 0.9049691498603352,
+      "p99_ms": 1.1043955493823883,
+      "max_ms": 1.2985409994143993
+    },
+    "full_controller": {
+      "mean_ms": 6.090151217997118,
+      "p50_ms": 5.920595999668876,
+      "p95_ms": 6.85043529961149,
+      "p99_ms": 6.992788739817115,
+      "max_ms": 7.106254000063927
+    },
+    "control_period_ms_at_50hz": 20.0,
+    "full_controller_deadline_fraction": 1.0,
+    "sample_final_action": [
+      0.18899326026439667,
+      -0.04250195249915123,
+      0.11845443397760391,
+      -0.2609139084815979,
+      -0.008295408450067043,
+      -0.020549990236759186,
+      -0.009866014122962952
+    ]
+  },
+  "mpc": {
+    "aggregate": {
+      "rows": 4397,
+      "measured_position": {
+        "mean_mm": 1.2209456319480592,
+        "rms_mm": 1.9894521439387005,
+        "p95_mm": 4.7198466907565475,
+        "p99_mm": 6.904882697873942,
+        "max_mm": 9.195575825329023
+      },
+      "measured_orientation": {
+        "mean_deg": 2.876321289094382,
+        "rms_deg": 3.411843320786544,
+        "p95_deg": 6.190700883979381,
+        "p99_deg": 9.606639269959091,
+        "max_deg": 11.274427822733683
+      },
+      "acados_solve_latency": {
+        "mean_ms": 3.3678402840505477,
+        "rms_ms": 3.7190799543610176,
+        "p95_ms": 5.70163419979508,
+        "p99_ms": 6.832193679583719,
+        "max_ms": 13.140118997398531
+      },
+      "solve_to_publish_latency": {
+        "mean_ms": 5.2659060972941205,
+        "rms_ms": 5.711677558567374,
+        "p95_ms": 8.379125595092772,
+        "p99_ms": 10.266237258911133,
+        "max_ms": 19.22774314880371
+      }
+    },
+    "conditions": {
+      "easy": {
+        "source": "/home/windylab/code/windylab_ws/src/arm-platform/demo/data/moving_base_mpc_loop_20260724_051521.csv",
+        "rows": 1533,
+        "task": {
+          "base_radius_m": 0.02,
+          "base_period_s": 1.0,
+          "base_z_amplitude_m": 0.0
+        },
+        "measured_position": {
+          "mean_mm": 0.217011201176521,
+          "rms_mm": 0.3760380283855276,
+          "p95_mm": 0.5385790779964352,
+          "p99_mm": 1.5306200130769518,
+          "max_mm": 5.160102110758547
+        },
+        "measured_orientation": {
+          "mean_deg": 1.720792065686788,
+          "rms_deg": 1.9154165047042269,
+          "p95_deg": 3.446618160325243,
+          "p99_deg": 4.222694449961408,
+          "max_deg": 5.093799825779201
+        },
+        "acados_solve_latency": {
+          "mean_ms": 2.9491916522930643,
+          "rms_ms": 3.2486511855806017,
+          "p95_ms": 5.282530000113183,
+          "p99_ms": 5.984281517739879,
+          "max_ms": 11.763518003135687
+        },
+        "solve_to_publish_latency": {
+          "mean_ms": 4.7890102637801695,
+          "rms_ms": 5.184353282595317,
+          "p95_ms": 7.896947860717773,
+          "p99_ms": 8.891201019287111,
+          "max_ms": 18.06330680847168
+        },
+        "status_fraction": {
+          "solver_success": 1.0,
+          "command_usable": 1.0,
+          "tracking_ok": 1.0,
+          "plan_feasible": 1.0,
+          "guard_block": 0.0
+        }
+      },
+      "medium": {
+        "source": "/home/windylab/code/windylab_ws/src/arm-platform/demo/data/moving_base_mpc_loop_20260724_051912.csv",
+        "rows": 1433,
+        "task": {
+          "base_radius_m": 0.02,
+          "base_period_s": 1.0,
+          "base_z_amplitude_m": 0.02
+        },
+        "measured_position": {
+          "mean_mm": 0.9456426514895745,
+          "rms_mm": 1.6696240388198955,
+          "p95_mm": 4.521553548468271,
+          "p99_mm": 7.084377923653778,
+          "max_mm": 7.326675330751162
+        },
+        "measured_orientation": {
+          "mean_deg": 3.6534021737793165,
+          "rms_deg": 4.325192056551159,
+          "p95_deg": 8.694339001583955,
+          "p99_deg": 10.457557940205216,
+          "max_deg": 11.274427822733683
+        },
+        "acados_solve_latency": {
+          "mean_ms": 3.533180732740661,
+          "rms_ms": 3.851123652143527,
+          "p95_ms": 5.684375800046835,
+          "p99_ms": 6.491858638473792,
+          "max_ms": 12.113095999666257
+        },
+        "solve_to_publish_latency": {
+          "mean_ms": 5.5165001336129,
+          "rms_ms": 5.919779426148854,
+          "p95_ms": 8.38046073913574,
+          "p99_ms": 9.845123291015627,
+          "max_ms": 18.825531005859375
+        },
+        "status_fraction": {
+          "solver_success": 1.0,
+          "command_usable": 1.0,
+          "tracking_ok": 1.0,
+          "plan_feasible": 1.0,
+          "guard_block": 0.0
+        }
+      },
+      "hard": {
+        "source": "/home/windylab/code/windylab_ws/src/arm-platform/demo/data/moving_base_mpc_loop_20260724_052123.csv",
+        "rows": 1431,
+        "task": {
+          "base_radius_m": 0.01,
+          "base_period_s": 0.5,
+          "base_z_amplitude_m": 0.01
+        },
+        "measured_position": {
+          "mean_mm": 2.5721270808437797,
+          "rms_mm": 3.0361789801648476,
+          "p95_mm": 5.664590627699536,
+          "p99_mm": 7.550397972339757,
+          "max_mm": 9.195575825329023
+        },
+        "measured_orientation": {
+          "mean_deg": 3.3360483273405954,
+          "rms_deg": 3.619981461971126,
+          "p95_deg": 5.625431216093726,
+          "p99_deg": 6.356897540528181,
+          "max_deg": 7.146231359731956
+        },
+        "acados_solve_latency": {
+          "mean_ms": 3.6507581663086124,
+          "rms_ms": 4.042526610302577,
+          "p95_ms": 6.011429999489337,
+          "p99_ms": 7.891597500201922,
+          "max_ms": 13.140118997398531
+        },
+        "solve_to_publish_latency": {
+          "mean_ms": 5.525850233375235,
+          "rms_ms": 6.029480981974704,
+          "p95_ms": 8.753061294555664,
+          "p99_ms": 11.560583114624055,
+          "max_ms": 19.22774314880371
+        },
+        "status_fraction": {
+          "solver_success": 1.0,
+          "command_usable": 1.0,
+          "tracking_ok": 1.0,
+          "plan_feasible": 1.0,
+          "guard_block": 0.0
+        }
+      }
+    }
+  },
+  "comparison": {
+    "conditions": {
+      "easy": {
+        "mpc_mean_mm": 0.217011201176521,
+        "mpc_p95_mm": 0.5385790779964352,
+        "mpc_max_mm": 5.160102110758547,
+        "phase2_mean_mm": 0.34247279167175293,
+        "phase2_p95_mm": 0.6790212988853455,
+        "phase2_max_mm": 3.206613540649414,
+        "phase2_mean_improvement_percent": -57.81341691813368
+      },
+      "medium": {
+        "mpc_mean_mm": 0.9456426514895745,
+        "mpc_p95_mm": 4.521553548468271,
+        "mpc_max_mm": 7.326675330751162,
+        "phase2_mean_mm": 0.670004665851593,
+        "phase2_p95_mm": 1.228376030921936,
+        "phase2_max_mm": 6.991157531738281,
+        "phase2_mean_improvement_percent": 29.14821843153934
+      },
+      "hard": {
+        "mpc_mean_mm": 2.5721270808437797,
+        "mpc_p95_mm": 5.664590627699536,
+        "mpc_max_mm": 9.195575825329023,
+        "phase2_mean_mm": 0.925439715385437,
+        "phase2_p95_mm": 1.5728697776794434,
+        "phase2_max_mm": 9.083549499511719,
+        "phase2_mean_improvement_percent": 64.02045131137731
+      }
+    },
+    "overall": {
+      "mpc_mean_mm": 1.2209456319480592,
+      "mpc_p95_mm": 4.7198466907565475,
+      "phase2_mean_mm": 0.6458982825279236,
+      "phase2_p95_mm": 1.3886806964874268,
+      "phase2_mean_improvement_percent": 47.09852219239512
+    },
+    "latency": {
+      "acados solve": {
+        "mean_ms": 3.3678402840505477,
+        "rms_ms": 3.7190799543610176,
+        "p95_ms": 5.70163419979508,
+        "p99_ms": 6.832193679583719,
+        "max_ms": 13.140118997398531
+      },
+      "acados solve\u2192publish": {
+        "mean_ms": 5.2659060972941205,
+        "rms_ms": 5.711677558567374,
+        "p95_ms": 8.379125595092772,
+        "p99_ms": 10.266237258911133,
+        "max_ms": 19.22774314880371
+      },
+      "Phase 1+2 policy": {
+        "mean_ms": 6.090151217997118,
+        "p50_ms": 5.920595999668876,
+        "p95_ms": 6.85043529961149,
+        "p99_ms": 6.992788739817115,
+        "max_ms": 7.106254000063927
+      },
+      "Phase 2 residual only": {
+        "mean_ms": 0.2993169159926765,
+        "p50_ms": 0.1858255000115605,
+        "p95_ms": 0.9049691498603352,
+        "p99_ms": 1.1043955493823883,
+        "max_ms": 1.2985409994143993
+      }
+    }
+  }
+}
